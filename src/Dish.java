@@ -3,7 +3,6 @@ import java.awt.*;
 
 public class Dish {
     Image dish;
-    private final int size = 30;
     private final int x;
     private final int y;
     private int pizza;
@@ -27,28 +26,31 @@ public class Dish {
         return y;
     }
 
-    public void addDessert() {
-        dessert +=1;
+    public void setDessert(boolean f) {
+        if (f)
+            dessert +=1;
+        if (!f)
+            dessert -=1;
     }
 
-    public void addPizza() {
-        pizza +=1;
+    public void setPizza(boolean f) {
+        if (f)
+            dessert +=1;
+        if (!f)
+            dessert -=1;
     }
 
-    public void addDrink() {
-        drink +=1;
+    public void setDrink(boolean f) {
+        if (f)
+            dessert +=1;
+        if (!f)
+            dessert -=1;
     }
 
-    public void setDessert() {
-        dessert -= 1;
-    }
-
-    public void setPizza() {
-        pizza -= 1;
-    }
-
-    public void setDrink() {
-        drink -= 1;
+    public void resetDish() {
+        dessert = 20;
+        pizza = 20;
+        drink = 20;
     }
 
     public int getDessert() {

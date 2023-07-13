@@ -3,7 +3,6 @@ import java.awt.*;
 
 public class Cheff  {
     Image cheff;
-    private final int size = 30;
     private int x;
     private int y;
     private final int speed = 5;
@@ -23,18 +22,17 @@ public class Cheff  {
     }
 
     public void goToDish(Dish dish) {
-        //dish.addDrink();
         if (x < dish.getX())
             x += speed;
         if (x > dish.getX())
             x -= speed;
         if (dish.getX() == x && dish.getY() - y == 48){
             if (dish.getDrink() < 10 && (int)(Math.random() * 1000) % 157 == 0)
-                dish.addDrink();
+                dish.setDrink(true);
             if (dish.getPizza() < 10 && (int)(Math.random() * 1000) % 157 == 0)
-                dish.addPizza();
+                dish.setPizza(true);
             if (dish.getDessert() < 10 && (int)(Math.random() * 1000) % 157 == 0)
-                dish.addDessert();
+                dish.setDessert(true);
         }
     }
 

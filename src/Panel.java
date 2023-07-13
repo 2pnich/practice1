@@ -11,29 +11,31 @@ public class Panel extends JPanel implements ActionListener, MouseListener, Mous
     final int FORM_WIDTH = 1100;
     final int FORM_HEIGHT = 900;
     final int UNIT_SIZE = 30;
-    int MouseX;
-    int MouseY;
-    int brushState = 0;
-    int wenthome;
-    boolean found = false;
+    private int MouseX;
+    private int MouseY;
+    private int brushState = 0; // кисть - 0/ластик - 1
+    private int wenthome = 0;
+    private boolean found = false;
+    private boolean paused = false;
     ArrayList<Table> tableList = new ArrayList<Table>();
     ArrayList<Visitor> visitorList = new ArrayList<Visitor>();
     Cheff cheff;
     Dish dish;
     Timer timer;
-    JButton eraser;
-    JButton brush;
+    JButton eraser, brush;
     JButton addVisitor;
     JButton clear;
+    JButton pause;
     JLabel drinkText;
     JLabel dessertText;
     JLabel pizzaText;
     JLabel brushText;
     JLabel tableCount;
     JLabel visitorsCount;
+    JLabel visitorsDone;
 
     Panel() {
-        Border border = BorderFactory.createLineBorder(Color.black,2);
+
         this.setPreferredSize(new Dimension(FORM_WIDTH, FORM_HEIGHT));
         dish = new Dish(500, 90);
         cheff = new Cheff();
@@ -42,7 +44,14 @@ public class Panel extends JPanel implements ActionListener, MouseListener, Mous
         drinkText = new JLabel("Напитки:" + dish.getDrink());
         dessertText = new JLabel("Десерт: " + dish.getPizza());
         timer.start();
+        textSettigs();
+        this.setLayout(null);
+        this.addMouseListener(this);
+        this.addMouseMotionListener(this);
+    }
 
+    public void textSettigs() {
+        Border border = BorderFactory.createLineBorder(Color.black,2);
         addVisitor = new JButton();                 //кнопка добавить посетителя
         addVisitor.setBounds(935, 100, 125, 25);
         addVisitor.setBackground(Color.white);
@@ -59,6 +68,14 @@ public class Panel extends JPanel implements ActionListener, MouseListener, Mous
         eraser.addActionListener(this);
         eraser.setBorder(border);
         this.add(eraser);
+
+        pause = new JButton("Пауза");
+        pause.setBounds(935, 150, 125, 25);
+        pause.setBackground(Color.white);
+        pause.setFont(new Font("Verdena", Font.BOLD, 15));
+        pause.addActionListener(this);
+        pause.setBorder(border);
+        this.add(pause);
 
         brush = new JButton();
         brush.setBounds(1000, 250, 50, 50);
@@ -87,16 +104,21 @@ public class Panel extends JPanel implements ActionListener, MouseListener, Mous
         visitorsCount.setBounds(950, 375, 200, 25);
         this.add(visitorsCount);
 
+        visitorsDone = new JLabel();                  //количество обслуженных людей
+        visitorsDone.setFont(new Font("Verdena", Font.PLAIN, 20));
+        visitorsDone.setBounds(950, 400, 200, 25);
+        this.add(visitorsDone);
+
         pizzaText.setFont(new Font("Verdena", Font.PLAIN, 20));
-        pizzaText.setBounds(950, 400, 200, 25);
+        pizzaText.setBounds(950, 425, 200, 25);
         this.add(pizzaText);
 
         drinkText.setFont(new Font("Verdena", Font.PLAIN, 20));
-        drinkText.setBounds(950, 425, 200, 25);
+        drinkText.setBounds(950, 450, 200, 25);
         this.add(drinkText);
 
         dessertText.setFont(new Font("Verdena", Font.PLAIN, 20));
-        dessertText.setBounds(950, 450, 200, 25);
+        dessertText.setBounds(950, 475, 200, 25);
         this.add(dessertText);
 
         brushText = new JLabel();
@@ -122,15 +144,6 @@ public class Panel extends JPanel implements ActionListener, MouseListener, Mous
         menu.setBounds(900, 0, 200, 900);
         menu.setBorder(border);
         this.add(menu);
-
-        this.setLayout(null);
-        this.addMouseListener(this);
-        this.addMouseMotionListener(this);
-
-    }
-
-    public void addGroup() {
-
     }
 
     public void visitorLogic() throws InterruptedException {
@@ -138,8 +151,6 @@ public class Panel extends JPanel implements ActionListener, MouseListener, Mous
         Iterator<Visitor> visitorIterator = visitorList.iterator();
         while (visitorIterator.hasNext()){
             Visitor visitor = visitorIterator.next();
-            if (visitor.getHome())
-                wenthome += 1;
             if (!found)
                 index = visitor.checkClosestTable(tableList);   //найти ближайший стол
             if (index != 0)
@@ -151,16 +162,14 @@ public class Panel extends JPanel implements ActionListener, MouseListener, Mous
                 visitor.setGotToWait();;
             }
             else  {
-                //visitor.checkTableCollisions(tableList);        //проверка столкновений со столами
-                //visitor.escapeTrap();                           //если путь прегражден
-                if (visitor.getGotDish()) {
+                if (visitor.getGotDish() && !visitor.getAngry()) {
                     if (!tableList.get(index).checkEmpty())
                         visitor.moveToTop(tableList.get(index));
                     else {
                         if (!tableList.get(index).getSatTop()) {
                             visitor.moveToTop(tableList.get(index));
                         }
-                        if (!tableList.get(index).getSatBot() && tableList.get(index).getSatTop()) {
+                        if (!tableList.get(index).getSatBot() && tableList.get(index).getSatTop() ) {
                             visitor.moveToBot(tableList.get(index));
                         }
                         if (!tableList.get(index).getsatLeft() && tableList.get(index).getSatBot()) {
@@ -171,14 +180,16 @@ public class Panel extends JPanel implements ActionListener, MouseListener, Mous
                         }
                     }
                 }
-                full = visitor.checkClosestFullTable(tableList);
+                if (visitor.getAngry())         //если злой - домой
+                    visitor.angryGoHome();
+                full = visitor.checkClosestNotFullTable(tableList);
                 if (visitor.getSat())
-                    visitor.goHome(tableList.get(full));
-                if (tableList.get(index).checkFull())
-                    System.out.println("ХУЕТА");
+                    visitor.goHome(tableList.get(full));   // поел-домой
             }
-            if (visitor.getHome())
+            if (visitor.getHome()) {
                 visitorIterator.remove();
+                wenthome++;
+            }
         }
     }
 
@@ -188,10 +199,16 @@ public class Panel extends JPanel implements ActionListener, MouseListener, Mous
             g.drawLine(i * UNIT_SIZE, 0, i * UNIT_SIZE, FORM_HEIGHT);
             g.drawLine(0, i * UNIT_SIZE, FORM_WIDTH - 200, i * UNIT_SIZE);
         }
-
-        g.setColor(Color.blue);
-        for (Visitor visitor: visitorList)
-            g.fillOval(visitor.getX(), visitor.getY(), UNIT_SIZE,UNIT_SIZE);
+        for (Visitor visitor: visitorList) {//если добрый отрисовывется синим
+            if (!visitor.getAngry()) {
+                g.setColor(Color.blue);
+                g.fillOval(visitor.getX(), visitor.getY(), UNIT_SIZE, UNIT_SIZE);
+            }
+            if (visitor.getAngry()) {       //если злой отрисовывется красным
+                g.setColor(Color.red);
+                g.fillOval(visitor.getX(), visitor.getY(), UNIT_SIZE, UNIT_SIZE);
+            }
+        }
 
         g.setColor(Color.black);
         for (Table table: tableList)
@@ -202,56 +219,54 @@ public class Panel extends JPanel implements ActionListener, MouseListener, Mous
         g.drawImage(table, 0, dish.getY(), null);
         g.drawImage(dish.getDish(), dish.getX(), dish.getY(), null);
         g.drawImage(cheff.getImg(), cheff.getX(), cheff.getY(), null);
-
     }
 
     public void clearMap() {
         tableList.clear();
         visitorList.clear();
+        dish.resetDish();
+        wenthome = 0;
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == addVisitor)
             visitorList.add(new Visitor(480, 840));
-
         if (e.getSource() == clear)
             clearMap();
-
         if (e.getSource() == eraser && brushState == 0)
             brushState = 1;
         if (e.getSource() == brush)
             brushState = 0;
+        if (e.getSource() == pause && !paused)
+            paused = true;
+        else if (e.getSource() == pause && paused)
+            paused = false;
+        if(!paused)
+            if ((int) (Math.random() * 1000) % 499 == 0)
+                visitorList.add(new Visitor(480, 840));
 
-        //if ((int)(Math.random() * 1000) % 499 == 0)
-            //visitorList.add(new Visitor(480, 840));
-        if ((int)(Math.random() * 1000) % 499 == 0)
-            addGroup();
-            //visitorList.add(new Visitor(450, 450));
-
-
-        if (!tableList.isEmpty()) {
+        if (!tableList.isEmpty() && !paused) {
             if (dish.getDessert() < 10 || dish.getPizza() < 10 || dish.getDrink() < 10)
                 cheff.goToDish(dish);
             else cheff.goToKictchen();
+
             if (!visitorList.isEmpty()) {
-                for (Table table : tableList) {
-                    //table.checkForSeats(visitorList);
+                for (Table table : tableList)
                     table.tableNearby(tableList);
-                }
                 try {
-                    visitorLogic();
+                        visitorLogic();
                 } catch (InterruptedException ex) {
                     throw new RuntimeException(ex);
                 }
             }
-
         }
-        visitorsCount.setText("Людей:" + (visitorList.size() - wenthome));
+        visitorsCount.setText("Людей:" + (visitorList.size()));
         tableCount.setText("Столов:" + tableList.size());
         drinkText.setText("Напитки:" + dish.getDrink());
         pizzaText.setText("Пицца:   " + dish.getPizza());
         dessertText.setText("Десерт: " + dish.getDessert());
+        visitorsDone.setText("Обслужено: " + wenthome);
         if (brushState == 0)
             brushText.setText("Выбрано: Кисть");
         if (brushState == 1)
@@ -281,9 +296,9 @@ public class Panel extends JPanel implements ActionListener, MouseListener, Mous
             MouseX -= 1;
         while (MouseY % 15 != 0)
             MouseY -= 1;
-        if (brushState == 1) {
+        if (brushState == 1)
             tableList.removeIf(table -> abs(table.getX() - MouseX) < 30 && abs(table.getY() - MouseY) < 30 &&  abs(table.getX() - MouseX) > 0);
-        }
+
     }
 
     @Override

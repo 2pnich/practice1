@@ -8,108 +8,78 @@ public class Visitor {
     private int x;
     private int y;
     private final int speed = 5;
-    boolean canMoveLeft = true;
-    boolean canMoveRight = true;
-    boolean canMoveTop = true;
-    boolean canMoveBot = true;
-    boolean home = false;
-    boolean sat = false;
-    boolean satTop = false;
-    boolean satBot = false;
-    boolean satLeft = false;
-    boolean satRight = false;
-    boolean gotDish = false;
-    boolean gotToWait = false;
-    boolean gotToGoHome = false;
-
-
-    int preference;             //предпочтения в еде
+    private boolean home = false;
+    private boolean sat = false;
+    private boolean satTop = false;
+    private boolean satBot = false;
+    private boolean satLeft = false;
+    private boolean satRight = false;
+    private boolean gotDish = false;
+    private boolean gotToWait = false;
+    private boolean gotToGoHome = false;
+    private boolean angry = false;
+    private int preference;             //предпочтения в еде
 
     Visitor(int x, int y) {
         this.x = x;
         this.y = y;
-        preference = (int) (Math.random() * 2);
+        preference = (int) (Math.random() * 10);
     }
 
-    public void checkTableCollisions(ArrayList<Table> tableList) {
-        for (Table table : tableList) {
-//            canMoveLeft = table.getX() - x >= size || table.getX() - x <= 0;
-            //canMoveRight = abs(table.getX() - x) > size || table.getX() - x >= 0 || abs(table.getY() - ) > 15;
-            //canMoveTop = abs(table.getY() - y) > size || table.getY() - y >= 0 || abs(table.getX() - x) > 15;
-            //canMoveTop = abs(table.getY() - y) >= size || table.getY() - y > 0 && x == table.getX();
-
-//            canMoveTop = table.getY() - y >= size || table.getX() - x > 0;
-//            canMoveBot = table.getY() - y >= size || table.getX() - x <= 0;
-        }
-    }
-
-    public void escapeTrap() {
-        if (!sat) {
-            if (!canMoveTop && canMoveRight)
-                x += speed;
-            if (!canMoveTop && !canMoveRight && canMoveLeft)
-                x -= speed;
-        }
+    public void angryGoHome() {
+        gotToGoHome = true;
+        if (x < 450)
+            x += speed;
+        if (x > 450)
+            x -= speed;
+        if (y < 900)
+            y += speed;
+        if (y > 900)
+            y -= speed;
+        if (y == 900 && x == 450)
+            home = true;
     }
 
     public void goHome(Table table) {
-        if (sat && (int)(Math.random() * 10000) % 4000 == 0) {
+        if (sat && (int) (Math.random() * 10000) % 9999 == 0) {
             gotToGoHome = true;
         }
         if (gotToGoHome) {
             if (satTop && y != table.getY() - size && x != table.getX()) {
                 table.setSatTop(false);
                 satTop = false;
-                System.out.println("ушел с топа");
             }
             if (satBot && y != table.getY() + size && x != table.getX()) {
                 satBot = false;
                 table.setSatBot(false);
-                System.out.println("ушел с бота");
 
             }
             if (satLeft && y != table.getY() && x != table.getX() - size) {
                 table.setSatLeft(false);
                 satLeft = false;
-                System.out.println("ушел слева");
             }
             if (satRight && y != table.getY() && x != table.getX() + size) {
                 table.setSatRight(false);
                 satRight = false;
-                System.out.println("ушел справа");
             }
         }
         if (gotToGoHome) {
-            if (x < 450 && canMoveRight)
+            if (x < 450)
                 x += speed;
-            if (x > 450 && canMoveLeft)
+            if (x > 450)
                 x -= speed;
-            if (y < 900 && canMoveBot)
+            if (y < 900)
                 y += speed;
-            if (y > 900 && canMoveTop)
+            if (y > 900)
                 y -= speed;
         }
         if (y == 900 && x == 450)
             home = true;
     }
 
-    public int findEmptySeat(Table table) {
-        if (!(satTop || satBot || satRight || satLeft)) {
-            return 1;
-        }
-        if (!satTop)
-            return 1;
-        if (!satBot)
-            return 2;
-        if (!satLeft)
-            return 3;
-        if (!satRight)
-            return 4;
-        return 0;
-    }
 
-    public int checkClosestFullTable(ArrayList<Table> tableList) {
-        int min = 10000, distance, index = 0;
+    public int checkClosestNotFullTable(ArrayList<Table> tableList) {
+        int min = 10000, distance = 0, index = 0;
         for (int i = 0; i < tableList.size(); i++) {
             distance = (int) sqrt(((tableList.get(i).getX() - x) * (tableList.get(i).getX() - x)) + ((tableList.get(i).getY() - y) * (tableList.get(i).getY() - y)));
             if (distance < min) {
@@ -134,23 +104,25 @@ public class Visitor {
 
     public void moveToDishes(Dish dish) {
         if (!gotDish) {
-            if (x < dish.getX() && canMoveRight)
+            if (x < dish.getX())
                 x += speed;
-            if (x > dish.getX() && canMoveLeft)
+            if (x > dish.getX())
                 x -= speed;
-            if (y < dish.getY() + size && canMoveBot)
+            if (y < dish.getY() + size)
                 y += speed;
-            if (y > dish.getY() + size && canMoveTop)
+            if (y > dish.getY() + size)
                 y -= speed;
         }
 
         if (x == dish.getX() && y == dish.getY() + size && !gotDish) {
-            dish.setDrink();
-            if (preference == 0)
-                dish.setPizza();
-            else {
-                dish.setDessert();
-            }
+            if (dish.getDrink() > 0)
+                dish.setDrink(false);
+            else angry = true;
+            if (preference < 5 && dish.getPizza() > 0)
+                dish.setPizza(false);
+            else if ((preference < 8 && preference > 5) && dish.getDessert() > 0) {
+                dish.setDessert(false);
+            } else angry = true;
             gotDish = true;
             gotToWait = true;
         }
@@ -158,32 +130,31 @@ public class Visitor {
 
     public void moveToTop(Table table) {
         if (!sat) {       //верхнее место
-            if (x < table.getX() && canMoveRight)
+            if (x < table.getX())
                 x += speed;
-            if (x > table.getX() && canMoveLeft)
+            if (x > table.getX())
                 x -= speed;
-            if (y < table.getY() - size && canMoveBot)
+            if (y < table.getY() - size)
                 y += speed;
-            if (y > table.getY() - size && canMoveTop)
+            if (y > table.getY() - size)
                 y -= speed;
-            if (y == table.getY() - size && x == table.getX()){
+            if (y == table.getY() - size && x == table.getX()) {
                 table.setSatTop(true);
                 satTop = true;
                 sat = true;
-                System.out.println("сел сверху");
             }
         }
     }
 
-    public void moveToBot( Table table) {
+    public void moveToBot(Table table) {
         if (!sat) {
-            if (x < table.getX() && canMoveRight)
+            if (x < table.getX())
                 x += speed;
-            if (x > table.getX() && canMoveLeft)
+            if (x > table.getX())
                 x -= speed;
-            if (y < table.getY() + size && canMoveBot)
+            if (y < table.getY() + size)
                 y += speed;
-            if (y > table.getY() + size && canMoveTop)
+            if (y > table.getY() + size)
                 y -= speed;
             if (y == table.getY() + size && x == table.getX()) {
                 table.setSatBot(true);
@@ -193,18 +164,17 @@ public class Visitor {
         }
     }
 
-    public void moveToLeft( Table table) {
+    public void moveToLeft(Table table) {
         if (!sat) {
-            if (x < table.getX() - size && canMoveRight)
+            if (x < table.getX() - size)
                 x += speed;
-            if (x > table.getX() - size && canMoveLeft)
+            if (x > table.getX() - size)
                 x -= speed;
-            if (y < table.getY() && canMoveBot)
+            if (y < table.getY())
                 y += speed;
-            if (y > table.getY() && canMoveTop)
+            if (y > table.getY())
                 y -= speed;
             if (y == table.getY() && x == table.getX() - size) {
-                System.out.println("СЕЛ ВЛЕВОБЛЯТЬ");
                 table.setSatLeft(true);
                 satLeft = true;
                 sat = true;
@@ -212,19 +182,18 @@ public class Visitor {
         }
     }
 
-    public void moveToRight( Table table) {
+    public void moveToRight(Table table) {
         if (!sat) {
-            if (x < table.getX() + size && canMoveRight)
+            if (x < table.getX() + size)
                 x += speed;
-            if (x > table.getX() + size && canMoveLeft)
+            if (x > table.getX() + size)
                 x -= speed;
-            if (y < table.getY() && canMoveBot)
+            if (y < table.getY())
                 y += speed;
-            if (y > table.getY() && canMoveTop)
+            if (y > table.getY())
                 y -= speed;
             if (y == table.getY() && x == table.getX() + size) {
                 table.setSatRight(true);
-                System.out.println("СЕЛ ВПРАВОБЛЯТЬ");
                 satRight = true;
                 sat = true;
             }
@@ -233,10 +202,6 @@ public class Visitor {
 
     public boolean getSat() {
         return sat;
-    }
-
-    public boolean getToGoHone() {
-        return gotToGoHome;
     }
 
     public boolean getGotDish() {
@@ -261,5 +226,9 @@ public class Visitor {
 
     public boolean getHome() {
         return home;
+    }
+
+    public boolean getAngry() {
+        return angry;
     }
 }

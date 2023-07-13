@@ -9,7 +9,7 @@ public class Table {
     private boolean satLeft = false;
     private boolean satRight = false;
     boolean full = false;
-    boolean haveseats;
+
     Table(int table_x, int table_y) {
         this.x = table_x;
         this.y = table_y;
@@ -26,15 +26,6 @@ public class Table {
                 table.setSatTop(true);
             if (table.getY() == y - size && x == table.getX())
                 table.setSatBot(true);
-        }
-    }
-
-    public void checkForSeats(ArrayList<Visitor> visitorList) {
-        for (Visitor visitor: visitorList) {
-            satRight = visitor.getX() == x - size && y == visitor.getY();
-            satLeft = visitor.getX() == x + size && y == visitor.getY();
-            satTop = visitor.getY() == y - size && x == visitor.getX();
-            satBot = visitor.getY() == y + size && x == visitor.getX();
         }
     }
 
@@ -88,9 +79,4 @@ public class Table {
     public int getY() {
         return y;
     }
-
-    public boolean getFull() {
-        return full;
-    }
-
 }
